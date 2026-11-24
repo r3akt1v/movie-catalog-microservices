@@ -1,0 +1,22 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Dependencies / vendor
+vendor/
+node_modules/
+
+# Environment / secrets
+.env
+*.env
+
+# Logs
+*.log
+
+# Database data (volumes)
+mysql_data/

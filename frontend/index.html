@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Каталог Фильмов - Микросервисы</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .auth-section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .auth-section h2 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #666;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        button {
+            background: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+
+        .filters {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .filters select {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .films-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .film-card {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+
+        .film-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .film-card img {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+            background: #ddd;
+        }
+
+        .film-card .content {
+            padding: 15px;
+        }
+
+        .film-card h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .film-card .genre {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .film-card .price {
+            color: #007bff;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .film-card .rating {
+            color: #ffc107;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .modal-content h2 {
+            margin-bottom: 20px;
+        }
+
+        .modal-content .close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 28px;
+            cursor: pointer;
+            color: #666;
+            font-weight: bold;
+            line-height: 1;
+            padding: 5px;
+        }
+
+        .modal-content .close:hover {
+            color: #000;
+        }
+
+        .user-info {
+            background: #d4edda;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            border: 1px solid #c3e6cb;
+        }
+
+        .reviews-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+        }
+
+        .review {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+
+        .review .author {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .review .date {
+            color: #999;
+            font-size: 12px;
+        }
+
+        .review .text {
+            margin-top: 5px;
+            color: #666;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .error {
+            color: #dc3545;
+            padding: 10px;
+            background: #f8d7da;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+
+        .success {
+            color: #155724;
+            padding: 10px;
+            background: #d4edda;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎬 Каталог Фильмов</h1>
+
+        <div id="userInfo" class="user-info hidden">
+            <span id="userName"></span>
+            <button onclick="openProfileModal()" style="margin-right: 10px;">Личный кабинет</button>
+            <button onclick="logout()">Выйти</button>
+        </div>
+
+        <div id="authSection" class="auth-section">
+            <h2>Авторизация</h2>
+            <div id="loginForm">
+                <div class="form-group">
+                    <label>Логин:</label>
+                    <input type="text" id="loginLogin" placeholder="testuser">
+                </div>
+                <div class="form-group">
+                    <label>Пароль:</label>
+                    <input type="password" id="loginPassword" placeholder="123456">
+                </div>
+                <button onclick="login()">Войти</button>
+                <button onclick="showRegister()" style="margin-left: 10px; background: #6c757d;">Регистрация</button>
+            </div>
+
+            <div id="registerForm" class="hidden">
+                <div class="form-group">
+                    <label>Логин:</label>
+                    <input type="text" id="regLogin">
+                </div>
+                <div class="form-group">
+                    <label>Имя:</label>
+                    <input type="text" id="regUsername">
+                </div>
+                <div class="form-group">
+                    <label>Email:</label>
+                    <input type="email" id="regEmail">
+                </div>
+                <div class="form-group">
+                    <label>Пароль:</label>
+                    <input type="password" id="regPassword">
+                </div>
+                <button onclick="register()">Зарегистрироваться</button>
+                <button onclick="showLogin()" style="margin-left: 10px; background: #6c757d;">Назад</button>
+            </div>
+        </div>
+
+        <div class="filters">
+            <label>Фильтр по жанру:</label>
+            <select id="genreFilter" onchange="loadFilms()">
+                <option value="">Все жанры</option>
+                <option value="action">Экшн</option>
+                <option value="drama">Драма</option>
+                <option value="comedy">Комедия</option>
+                <option value="fantasy">Фэнтези</option>
+            </select>
+        </div>
+
+        <div id="filmsGrid" class="films-grid"></div>
+    </div>
+
+    <div id="filmModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2 id="modalTitle"></h2>
+            <p id="modalDescription"></p>
+            <p><strong>Жанр:</strong> <span id="modalGenre"></span></p>
+            <p><strong>Цена:</strong> <span id="modalPrice"></span> ₽</p>
+            <p><strong>Средняя оценка:</strong> <span id="modalRating"></span></p>
+
+            <div id="purchaseSection" class="reviews-section">
+                <button onclick="purchaseFilm()" id="purchaseBtn">Купить фильм</button>
+            </div>
+
+            <div id="watchSection" class="reviews-section hidden">
+                <button onclick="openVideoPlayer()" id="watchBtn">Посмотреть фильм</button>
+            </div>
+
+            <div id="watchedMessage" class="success hidden">
+                Фильм просмотрен!
+            </div>
+
+            <div id="reviewSection" class="reviews-section hidden">
+                <h3>Оценить фильм</h3>
+                <div class="form-group">
+                    <label>Оценка (1-10):</label>
+                    <input type="number" id="reviewScore" min="1" max="10" value="8">
+                </div>
+                <button onclick="submitRating()">Оценить</button>
+
+                <h3 style="margin-top: 20px;">Написать отзыв (опционально)</h3>
+                <div class="form-group">
+                    <label>Текст отзыва (до 10000 символов):</label>
+                    <textarea id="reviewText" maxlength="10000" placeholder="Оставьте отзыв о фильме..."></textarea>
+                </div>
+                <button onclick="submitReview()">Отправить отзыв</button>
+            </div>
+
+            <div class="reviews-section">
+                <h3>Отзывы</h3>
+                <div id="reviewsList"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="profileModal" class="modal">
+        <div class="modal-content" style="max-width: 800px;">
+            <span class="close" onclick="closeProfileModal()">&times;</span>
+            <h2>Личный кабинет</h2>
+
+            <div id="profileInfo"></div>
+
+            <div class="reviews-section">
+                <h3>История покупок</h3>
+                <div id="purchasesList"></div>
+            </div>
+
+            <div class="reviews-section">
+                <h3>История просмотров</h3>
+                <div id="viewsList"></div>
+            </div>
+
+            <div class="reviews-section">
+                <h3>Мои оценки</h3>
+                <div id="ratingsList"></div>
+            </div>
+
+            <div class="reviews-section">
+                <h3>Мои отзывы</h3>
+                <div id="myReviewsList"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="videoModal" class="modal">
+        <div class="modal-content" style="max-width: 900px;">
+            <span class="close" onclick="closeVideoModal()">&times;</span>
+            <h2 id="videoTitle"></h2>
+            <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+                <iframe id="videoPlayer" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0;"
+                    src="" allowfullscreen>
+                </iframe>
+            </div>
+            <div style="margin-top: 20px;">
+                <button onclick="closeVideoAndMarkWatched()">Закрыть и отметить как просмотренный</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = '/api';
+        let currentToken = localStorage.getItem('token');
+        let currentUserId = localStorage.getItem('userId');
+        let currentFilmId = null;
+        let currentFilmVideoUrl = null;
+
+        if (currentToken) {
+            document.getElementById('authSection').classList.add('hidden');
+            document.getElementById('userInfo').classList.remove('hidden');
+            document.getElementById('userName').textContent = `Привет, пользователь!`;
+        }
+
+        function showRegister() {
+            document.getElementById('loginForm').classList.add('hidden');
+            document.getElementById('registerForm').classList.remove('hidden');
+        }
+
+        function showLogin() {
+            document.getElementById('registerForm').classList.add('hidden');
+            document.getElementById('loginForm').classList.remove('hidden');
+        }
+
+        async function register() {
+            const login = document.getElementById('regLogin').value;
+            const username = document.getElementById('regUsername').value;
+            const email = document.getElementById('regEmail').value;
+            const password = document.getElementById('regPassword').value;
+
+            try {
+                const response = await fetch(`${API_URL}/auth/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ login, username, email, password })
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    alert('Регистрация успешна! Теперь войдите.');
+                    showLogin();
+                } else {
+                    alert('Ошибка: ' + data.error);
+                }
+            } catch (error) {
+                alert('Сервис авторизации недоступен. Регистрация невозможна.');
+            }
+        }
+
+        async function login() {
+            const login = document.getElementById('loginLogin').value;
+            const password = document.getElementById('loginPassword').value;
+
+            try {
+                const response = await fetch(`${API_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ login, password })
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    currentToken = data.token;
+                    currentUserId = data.user.id;
+                    localStorage.setItem('token', currentToken);
+                    localStorage.setItem('userId', currentUserId);
+
+                    document.getElementById('authSection').classList.add('hidden');
+                    document.getElementById('userInfo').classList.remove('hidden');
+                    document.getElementById('userName').textContent = `Привет, ${data.user.username}!`;
+                } else {
+                    alert('Ошибка: ' + data.error);
+                }
+            } catch (error) {
+                alert('Сервис авторизации недоступен. Вход невозможен.');
+            }
+        }
+
+        function logout() {
+            currentToken = null;
+            currentUserId = null;
+            localStorage.removeItem('token');
+            localStorage.removeItem('userId');
+
+            document.getElementById('authSection').classList.remove('hidden');
+            document.getElementById('userInfo').classList.add('hidden');
+        }
+
+        async function loadFilms() {
+            const genre = document.getElementById('genreFilter').value;
+            let url = `${API_URL}/films`;
+            if (genre) {
+                url += `?genre=${genre}`;
+            }
+
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error('Catalog service unavailable');
+                }
+                const films = await response.json();
+
+                const grid = document.getElementById('filmsGrid');
+                grid.innerHTML = films.map(film => `
+                    <div class="film-card" onclick="openFilmModal('${film.id}')">
+                        <div style="height: 300px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 48px;">🎬</div>
+                        <div class="content">
+                            <h3>${film.title}</h3>
+                            <p class="genre">${film.genre}</p>
+                            <p class="price">${film.price} ₽</p>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading films:', error);
+                const grid = document.getElementById('filmsGrid');
+                grid.innerHTML = '<div class="error">Сервис каталога недоступен. Фильмы не могут быть загружены.</div>';
+            }
+        }
+
+        async function openFilmModal(filmId) {
+            currentFilmId = filmId;
+
+            // Reset modal state
+            document.getElementById('purchaseSection').classList.remove('hidden');
+            document.getElementById('watchSection').classList.add('hidden');
+            document.getElementById('watchedMessage').classList.add('hidden');
+            document.getElementById('reviewSection').classList.add('hidden');
+
+            try {
+                // Load film details (required)
+                let film = null;
+                try {
+                    const filmResponse = await fetch(`${API_URL}/films/${filmId}`);
+                    if (filmResponse.ok) {
+                        film = await filmResponse.json();
+                        currentFilmVideoUrl = film.video_url;
+                    } else {
+                        throw new Error('Film not found');
+                    }
+                } catch (error) {
+                    alert('Сервис каталога недоступен. Не удалось загрузить информацию о фильме.');
+                    return;
+                }
+
+                document.getElementById('modalTitle').textContent = film.title;
+                document.getElementById('modalDescription').textContent = film.description || 'Нет описания';
+                document.getElementById('modalGenre').textContent = film.genre;
+                document.getElementById('modalPrice').textContent = film.price;
+
+                // Load ratings (optional)
+                try {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 2000);
+                    const ratingsResponse = await fetch(`${API_URL}/films/${filmId}/ratings`, { signal: controller.signal });
+                    clearTimeout(timeoutId);
+
+                    if (ratingsResponse.ok) {
+                        const ratings = await ratingsResponse.json();
+                        document.getElementById('modalRating').textContent = ratings.average_score || 'Нет оценок';
+                    } else {
+                        document.getElementById('modalRating').textContent = 'Сервис оценок недоступен';
+                    }
+                } catch (error) {
+                    document.getElementById('modalRating').textContent = 'Сервис оценок недоступен';
+                }
+
+                // Load reviews (optional)
+                const reviewsList = document.getElementById('reviewsList');
+                try {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 2000);
+                    const reviewsResponse = await fetch(`${API_URL}/films/${filmId}/reviews`, { signal: controller.signal });
+                    clearTimeout(timeoutId);
+
+                    if (reviewsResponse.ok) {
+                        const reviews = await reviewsResponse.json();
+                        if (reviews.reviews && reviews.reviews.length > 0) {
+                            reviewsList.innerHTML = reviews.reviews.map(review => `
+                                <div class="review">
+                                    <div class="author">${review.username} (${review.login}) ${review.user_rating ? '- Оценка: ' + review.user_rating + '/10' : ''}</div>
+                                    <div class="date">${new Date(review.created_at).toLocaleString('ru-RU')}</div>
+                                    ${review.text ? `<div class="text">${review.text}</div>` : ''}
+                                </div>
+                            `).join('');
+                        } else {
+                            reviewsList.innerHTML = '<p>Пока нет отзывов</p>';
+                        }
+                    } else {
+                        reviewsList.innerHTML = '<p>Сервис отзывов недоступен</p>';
+                    }
+                } catch (error) {
+                    reviewsList.innerHTML = '<p>Сервис отзывов недоступен</p>';
+                }
+
+                // Load user history (optional)
+                try {
+                    if (currentUserId) {
+                        const controller = new AbortController();
+                        const timeoutId = setTimeout(() => controller.abort(), 2000);
+                        const historyResponse = await fetch(`${API_URL}/user/history`, {
+                            headers: { 'Authorization': `Bearer ${currentToken}` },
+                            signal: controller.signal
+                        });
+                        clearTimeout(timeoutId);
+
+                        if (historyResponse.ok) {
+                            const history = await historyResponse.json();
+                            const isPurchased = history.purchases && history.purchases.some(p => p.film_id === filmId);
+                            const isViewed = history.views && history.views.some(v => v.film_id === filmId);
+
+                            if (isPurchased) {
+                                document.getElementById('purchaseSection').classList.add('hidden');
+                                document.getElementById('watchSection').classList.remove('hidden');
+                            }
+
+                            if (isViewed) {
+                                document.getElementById('watchedMessage').classList.remove('hidden');
+                                document.getElementById('reviewSection').classList.remove('hidden');
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.error('User service unavailable:', error);
+                }
+
+                document.getElementById('filmModal').classList.add('active');
+            } catch (error) {
+                console.error('Error loading film details:', error);
+                alert('Произошла ошибка при загрузке фильма');
+            }
+        }
+
+        async function purchaseFilm() {
+            if (!currentUserId) {
+                alert('Сначала войдите в систему');
+                return;
+            }
+
+            try {
+                const filmResponse = await fetch(`${API_URL}/films/${currentFilmId}`);
+                const film = await filmResponse.json();
+
+                const response = await fetch(`${API_URL}/user/history/purchase`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${currentToken}`
+                    },
+                    body: JSON.stringify({
+                        film_id: currentFilmId,
+                        film_title: film.title,
+                        price: film.price
+                    })
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    alert('Фильм куплен!');
+                    document.getElementById('purchaseSection').classList.add('hidden');
+                    document.getElementById('watchSection').classList.remove('hidden');
+                } else {
+                    alert('Ошибка: ' + data.error);
+                }
+            } catch (error) {
+                alert('Ошибка соединения');
+            }
+        }
+
+        async function watchFilm() {
+            try {
+                const filmResponse = await fetch(`${API_URL}/films/${currentFilmId}`);
+                const film = await filmResponse.json();
+
+                const response = await fetch(`${API_URL}/user/history/view`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${currentToken}`
+                    },
+                    body: JSON.stringify({
+                        film_id: currentFilmId,
+                        film_title: film.title
+                    })
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    document.getElementById('watchSection').classList.add('hidden');
+                    document.getElementById('watchedMessage').classList.remove('hidden');
+                    document.getElementById('reviewSection').classList.remove('hidden');
+                } else {
+                    alert('Ошибка: ' + data.error);
+                }
+            } catch (error) {
+                alert('Ошибка соединения');
+            }
+        }
+
+        async function openVideoPlayer() {
+            if (!currentFilmVideoUrl) {
+                alert('Видео недоступно для этого фильма');
+                return;
+            }
+
+            const filmResponse = await fetch(`${API_URL}/films/${currentFilmId}`);
+            const film = await filmResponse.json();
+
+            document.getElementById('videoTitle').textContent = film.title;
+            document.getElementById('videoPlayer').src = currentFilmVideoUrl;
+            document.getElementById('videoModal').classList.add('active');
+        }
+
+        function closeVideoModal() {
+            document.getElementById('videoModal').classList.remove('active');
+            document.getElementById('videoPlayer').src = '';
+        }
+
+        async function closeVideoAndMarkWatched() {
+            closeVideoModal();
+            await watchFilm();
+        }
+
+        function closeModal() {
+            document.getElementById('filmModal').classList.remove('active');
+            currentFilmId = null;
+        }
+
+        async function submitRating() {
+            if (!currentUserId) {
+                alert('Сначала войдите в систему');
+                return;
+            }
+
+            const score = document.getElementById('reviewScore').value;
+
+            try {
+                const ratingResponse = await fetch(`${API_URL}/ratings`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_id: currentUserId,
+                        film_id: currentFilmId,
+                        score: parseInt(score)
+                    })
+                });
+
+                if (ratingResponse.ok) {
+                    alert('Оценка сохранена!');
+                    openFilmModal(currentFilmId); // Refresh ratings
+                } else {
+                    alert('Ошибка при сохранении оценки');
+                }
+            } catch (error) {
+                alert('Ошибка соединения');
+            }
+        }
+
+        async function submitReview() {
+            if (!currentUserId) {
+                alert('Сначала войдите в систему');
+                return;
+            }
+
+            const text = document.getElementById('reviewText').value.trim();
+
+            try {
+                const reviewResponse = await fetch(`${API_URL}/reviews`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_id: currentUserId,
+                        film_id: currentFilmId,
+                        text: text || null
+                    })
+                });
+
+                if (reviewResponse.ok) {
+                    alert('Отзыв отправлен!');
+                    document.getElementById('reviewText').value = '';
+                    openFilmModal(currentFilmId); // Refresh reviews
+                } else {
+                    alert('Ошибка при отправке отзыва');
+                }
+            } catch (error) {
+                alert('Ошибка соединения');
+            }
+        }
+
+        function openProfileModal() {
+            if (!currentUserId) {
+                alert('Сначала войдите в систему');
+                return;
+            }
+
+            loadProfile();
+            document.getElementById('profileModal').classList.add('active');
+        }
+
+        function closeProfileModal() {
+            document.getElementById('profileModal').classList.remove('active');
+        }
+
+        async function loadProfile() {
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 2000);
+                const response = await fetch(`${API_URL}/user/full-profile`, {
+                    headers: { 'Authorization': `Bearer ${currentToken}` },
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+
+                if (response.ok) {
+                    const data = await response.json();
+
+                    // Profile info
+                    document.getElementById('profileInfo').innerHTML = `
+                        <p><strong>Логин:</strong> ${data.user.login}</p>
+                        <p><strong>Имя:</strong> ${data.user.username}</p>
+                        <p><strong>Email:</strong> ${data.user.email}</p>
+                        <p><strong>Дата регистрации:</strong> ${new Date(data.user.created_at).toLocaleString('ru-RU')}</p>
+                    `;
+
+                    // Purchases
+                    const purchasesList = document.getElementById('purchasesList');
+                    if (data.purchases && data.purchases.length > 0) {
+                        purchasesList.innerHTML = data.purchases.map(p => `
+                            <div class="review">
+                                <div class="author">${p.film_title}</div>
+                                <div class="date">${new Date(p.created_at).toLocaleString('ru-RU')} - ${p.price} ₽</div>
+                            </div>
+                        `).join('');
+                    } else {
+                        purchasesList.innerHTML = '<p>Покупок нет</p>';
+                    }
+
+                    // Views
+                    const viewsList = document.getElementById('viewsList');
+                    if (data.views && data.views.length > 0) {
+                        viewsList.innerHTML = data.views.map(v => `
+                            <div class="review">
+                                <div class="author">${v.film_title}</div>
+                                <div class="date">${new Date(v.created_at).toLocaleString('ru-RU')}</div>
+                            </div>
+                        `).join('');
+                    } else {
+                        viewsList.innerHTML = '<p>Просмотров нет</p>';
+                    }
+
+                    // Ratings
+                    const ratingsList = document.getElementById('ratingsList');
+                    if (data.ratings && data.ratings.length > 0) {
+                        ratingsList.innerHTML = data.ratings.map(r => `
+                            <div class="review">
+                                <div class="author">${r.film_title || r.film_id}</div>
+                                <div class="date">Оценка: ${r.score}/10 - ${new Date(r.created_at).toLocaleString('ru-RU')}</div>
+                            </div>
+                        `).join('');
+                    } else {
+                        ratingsList.innerHTML = '<p>Оценок нет</p>';
+                    }
+
+                    // Reviews
+                    const myReviewsList = document.getElementById('myReviewsList');
+                    if (data.reviews && data.reviews.length > 0) {
+                        myReviewsList.innerHTML = data.reviews.map(r => `
+                            <div class="review">
+                                <div class="author">${r.film_title || r.film_id}</div>
+                                <div class="date">${new Date(r.created_at).toLocaleString('ru-RU')}</div>
+                                ${r.text ? `<div class="text">${r.text}</div>` : ''}
+                            </div>
+                        `).join('');
+                    } else {
+                        myReviewsList.innerHTML = '<p>Отзывов нет</p>';
+                    }
+                } else {
+                    alert('Ошибка загрузки профиля');
+                }
+            } catch (error) {
+                alert('Сервис недоступен');
+            }
+        }
+
+        // Load films on page load
+        loadFilms();
+    </script>
+</body>
+</html>
